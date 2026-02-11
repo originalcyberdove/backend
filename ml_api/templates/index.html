@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMS Phishing Detector - Protect Yourself from Scams</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .card-shadow {
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .slide-in {
+            animation: slideIn 0.5s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <i class="fas fa-shield-alt text-purple-600 text-2xl mr-3"></i>
+                    <span class="text-xl font-bold text-gray-800">SMS Phishing Detector</span>
+                </div>
+                <div class="hidden md:flex space-x-8">
+                    <a href="#check" class="text-gray-700 hover:text-purple-600 font-medium">Check SMS</a>
+                    <a href="#history" class="text-gray-700 hover:text-purple-600 font-medium">History</a>
+                    <a href="#stats" class="text-gray-700 hover:text-purple-600 font-medium">Statistics</a>
+                    <a href="#settings" class="text-gray-700 hover:text-purple-600 font-medium">Settings</a>
+                </div>
+                <div>
+                    <select id="languageSelect" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        <option value="en">English</option>
+                        <option value="yo">Yoruba</option>
+                        <option value="ha">Hausa</option>
+                        <option value="ig">Igbo</option>
+                        <option value="pidgin">Pidgin</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="gradient-bg text-white py-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 class="text-5xl font-extrabold mb-6">
+                Protect Yourself from SMS Scams
+            </h1>
+            <p class="text-xl mb-8 text-purple-100">
+                Detect phishing attempts instantly with AI-powered analysis
+            </p>
+            <div class="flex justify-center space-x-4">
+                <div class="bg-white bg-opacity-20 rounded-lg px-6 py-4 backdrop-blur-sm">
+                    <div class="text-3xl font-bold" id="totalChecks">0</div>
+                    <div class="text-sm text-purple-100">Messages Analyzed</div>
+                </div>
+                <div class="bg-white bg-opacity-20 rounded-lg px-6 py-4 backdrop-blur-sm">
+                    <div class="text-3xl font-bold" id="phishingBlocked">0</div>
+                    <div class="text-sm text-purple-100">Scams Detected</div>
+                </div>
+                <div class="bg-white bg-opacity-20 rounded-lg px-6 py-4 backdrop-blur-sm">
+                    <div class="text-3xl font-bold">95%+</div>
+                    <div class="text-sm text-purple-100">Accuracy</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Check Section -->
+    <section id="check" class="py-16">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="bg-white rounded-2xl shadow-2xl p-8 card-shadow">
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-2">Check Your SMS Message</h2>
+                    <p class="text-gray-600">Paste your SMS message below to check if it's a phishing attempt</p>
+                </div>
+
+                <div class="mb-6">
+                    <label for="messageInput" class="block text-sm font-medium text-gray-700 mb-2">
+                        SMS Message
+                    </label>
+                    <textarea 
+                        id="messageInput" 
+                        rows="6" 
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        placeholder="Paste your SMS message here...&#10;&#10;Example: Congratulations! You have won N500,000. Click here to claim your prize now!"
+                    ></textarea>
+                    <div class="flex justify-between items-center mt-2">
+                        <span class="text-sm text-gray-500">
+                            <span id="charCount">0</span> characters
+                        </span>
+                        <button 
+                            id="clearBtn"
+                            class="text-sm text-purple-600 hover:text-purple-700 font-medium"
+                        >
+                            Clear
+                        </button>
+                    </div>
+                </div>
+
+                <button 
+                    id="checkBtn"
+                    class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-6 rounded-lg transition duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                >
+                    <i class="fas fa-search mr-2"></i>
+                    <span id="btnText">Check Message</span>
+                </button>
+
+                <!-- Result Display -->
+                <div id="resultContainer" class="mt-8 hidden slide-in">
+                    <div id="resultCard" class="rounded-lg p-6">
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="flex items-center">
+                                <div id="resultIcon" class="text-4xl mr-4"></div>
+                                <div>
+                                    <h3 id="resultTitle" class="text-2xl font-bold mb-1"></h3>
+                                    <p id="resultMessage" class="text-sm"></p>
+                                </div>
+                            </div>
+                            <div id="confidenceBadge" class="px-4 py-2 rounded-full font-bold text-sm"></div>
+                        </div>
+
+                        <!-- Confidence Meter -->
+                        <div class="mb-4">
+                            <div class="flex justify-between text-sm mb-2">
+                                <span>Confidence Level</span>
+                                <span id="confidencePercent" class="font-bold"></span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-3">
+                                <div id="confidenceBar" class="h-3 rounded-full transition-all duration-500"></div>
+                            </div>
+                        </div>
+
+                        <!-- Recommendation -->
+                        <div id="recommendationBox" class="border-l-4 p-4 rounded mb-4">
+                            <h4 class="font-bold mb-2 flex items-center">
+                                <i class="fas fa-lightbulb mr-2"></i>
+                                Recommendation
+                            </h4>
+                            <p id="recommendation" class="text-sm"></p>
+                        </div>
+
+                        <!-- Indicators -->
+                        <div id="indicatorsBox" class="hidden">
+                            <h4 class="font-bold mb-3 text-gray-800">Detected Indicators:</h4>
+                            <div id="indicatorsList" class="flex flex-wrap gap-2"></div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="mt-6 flex space-x-3">
+                            <button 
+                                onclick="provideFeedback('correct')"
+                                class="flex-1 bg-green-100 hover:bg-green-200 text-green-700 font-medium py-2 px-4 rounded-lg transition"
+                            >
+                                <i class="fas fa-check mr-2"></i>
+                                Correct
+                            </button>
+                            <button 
+                                onclick="provideFeedback('incorrect')"
+                                class="flex-1 bg-red-100 hover:bg-red-200 text-red-700 font-medium py-2 px-4 rounded-lg transition"
+                            >
+                                <i class="fas fa-times mr-2"></i>
+                                Incorrect
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- History Section -->
+    <section id="history" class="py-16 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-800 mb-2">Detection History</h2>
+                <p class="text-gray-600">View your recent SMS checks</p>
+            </div>
+
+            <div class="bg-gray-50 rounded-lg p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold text-gray-800">Recent Checks</h3>
+                    <button 
+                        onclick="loadHistory()"
+                        class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition"
+                    >
+                        <i class="fas fa-sync-alt mr-2"></i>
+                        Refresh
+                    </button>
+                </div>
+                
+                <div id="historyList" class="space-y-4">
+                    <!-- History items will be inserted here -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Statistics Section -->
+    <section id="stats" class="py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-800 mb-2">Statistics Dashboard</h2>
+                <p class="text-gray-600">System performance and insights</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white rounded-lg p-6 shadow-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600 mb-1">Total Checks</p>
+                            <p class="text-3xl font-bold text-gray-800" id="statTotalChecks">0</p>
+                        </div>
+                        <i class="fas fa-search text-4xl text-blue-500"></i>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg p-6 shadow-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600 mb-1">Phishing Detected</p>
+                            <p class="text-3xl font-bold text-red-600" id="statPhishing">0</p>
+                        </div>
+                        <i class="fas fa-exclamation-triangle text-4xl text-red-500"></i>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg p-6 shadow-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600 mb-1">Suspicious</p>
+                            <p class="text-3xl font-bold text-yellow-600" id="statSuspicious">0</p>
+                        </div>
+                        <i class="fas fa-question-circle text-4xl text-yellow-500"></i>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg p-6 shadow-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600 mb-1">Safe Messages</p>
+                            <p class="text-3xl font-bold text-green-600" id="statSafe">0</p>
+                        </div>
+                        <i class="fas fa-check-circle text-4xl text-green-500"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Settings Section -->
+    <section id="settings" class="py-16 bg-white">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-800 mb-2">Settings</h2>
+                <p class="text-gray-600">Customize your experience</p>
+            </div>
+
+            <div class="bg-gray-50 rounded-lg p-8">
+                <div class="space-y-6">
+                    <!-- Language Setting -->
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-bold text-gray-800">Language</h4>
+                            <p class="text-sm text-gray-600">Choose your preferred language</p>
+                        </div>
+                        <select id="settingsLanguage" class="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            <option value="en">English</option>
+                            <option value="yo">Yoruba</option>
+                            <option value="ha">Hausa</option>
+                            <option value="ig">Igbo</option>
+                            <option value="pidgin">Pidgin</option>
+                        </select>
+                    </div>
+
+                    <!-- Theme Setting -->
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-bold text-gray-800">Theme</h4>
+                            <p class="text-sm text-gray-600">Light or dark mode</p>
+                        </div>
+                        <select id="settingsTheme" class="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            <option value="light">Light</option>
+                            <option value="dark">Dark</option>
+                        </select>
+                    </div>
+
+                    <!-- Sound Alerts -->
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-bold text-gray-800">Sound Alerts</h4>
+                            <p class="text-sm text-gray-600">Play sound when phishing detected</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="soundAlerts" class="sr-only peer" checked>
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                        </label>
+                    </div>
+
+                    <!-- Auto-save History -->
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-bold text-gray-800">Auto-save History</h4>
+                            <p class="text-sm text-gray-600">Automatically save detection results</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="autoSaveHistory" class="sr-only peer" checked>
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                        </label>
+                    </div>
+
+                    <button 
+                        onclick="saveSettings()"
+                        class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg transition"
+                    >
+                        <i class="fas fa-save mr-2"></i>
+                        Save Settings
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p class="mb-2">&copy; 2026 SMS Phishing Detector. Protecting Nigerians from SMS scams.</p>
+            <p class="text-sm text-gray-400">Final Year Project - Computer Science</p>
+        </div>
+    </footer>
+
+    <script>
+        // API Configuration
+        const API_BASE = 'http://127.0.0.1:8000/api';
+        let currentLogId = null;
+        let userId = localStorage.getItem('userId') || 'user_' + Date.now();
+        localStorage.setItem('userId', userId);
+
+        // Elements
+        const messageInput = document.getElementById('messageInput');
+        const charCount = document.getElementById('charCount');
+        const checkBtn = document.getElementById('checkBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const resultContainer = document.getElementById('resultContainer');
+
+        // Character counter
+        messageInput.addEventListener('input', () => {
+            charCount.textContent = messageInput.value.length;
+        });
+
+        // Clear button
+        clearBtn.addEventListener('click', () => {
+            messageInput.value = '';
+            charCount.textContent = '0';
+            resultContainer.classList.add('hidden');
+        });
+
+        // Check message
+        checkBtn.addEventListener('click', async () => {
+            const message = messageInput.value.trim();
+            
+            if (!message) {
+                alert('Please enter a message to check');
+                return;
+            }
+
+            // Show loading state
+            checkBtn.disabled = true;
+            document.getElementById('btnText').textContent = 'Analyzing...';
+            checkBtn.classList.add('pulse-animation');
+
+            try {
+                const response = await fetch(`${API_BASE}/check-message/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        user_id: userId,
+                        language: document.getElementById('languageSelect').value
+                    })
+                });
+
+                const data = await response.json();
+                currentLogId = data.log_id;
+                displayResult(data);
+                
+                // Update statistics
+                updateStatistics();
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error checking message. Please try again.');
+            } finally {
+                checkBtn.disabled = false;
+                document.getElementById('btnText').textContent = 'Check Message';
+                checkBtn.classList.remove('pulse-animation');
+            }
+        });
+
+        function displayResult(data) {
+            const resultCard = document.getElementById('resultCard');
+            const resultIcon = document.getElementById('resultIcon');
+            const resultTitle = document.getElementById('resultTitle');
+            const resultMessage = document.getElementById('resultMessage');
+            const confidenceBadge = document.getElementById('confidenceBadge');
+            const confidencePercent = document.getElementById('confidencePercent');
+            const confidenceBar = document.getElementById('confidenceBar');
+            const recommendation = document.getElementById('recommendation');
+            const recommendationBox = document.getElementById('recommendationBox');
+            const indicatorsList = document.getElementById('indicatorsList');
+            const indicatorsBox = document.getElementById('indicatorsBox');
+
+            // Classification styling
+            if (data.classification === 'phishing') {
+                resultCard.className = 'rounded-lg p-6 bg-red-50 border-2 border-red-200';
+                resultIcon.innerHTML = '<i class="fas fa-exclamation-triangle text-red-600"></i>';
+                resultTitle.className = 'text-2xl font-bold mb-1 text-red-700';
+                resultMessage.className = 'text-sm text-red-600';
+                confidenceBadge.className = 'px-4 py-2 rounded-full font-bold text-sm bg-red-200 text-red-800';
+                confidenceBar.className = 'h-3 rounded-full transition-all duration-500 bg-red-500';
+                recommendationBox.className = 'border-l-4 border-red-500 bg-red-50 p-4 rounded mb-4';
+            } else if (data.classification === 'suspicious') {
+                resultCard.className = 'rounded-lg p-6 bg-yellow-50 border-2 border-yellow-200';
+                resultIcon.innerHTML = '<i class="fas fa-exclamation-circle text-yellow-600"></i>';
+                resultTitle.className = 'text-2xl font-bold mb-1 text-yellow-700';
+                resultMessage.className = 'text-sm text-yellow-600';
+                confidenceBadge.className = 'px-4 py-2 rounded-full font-bold text-sm bg-yellow-200 text-yellow-800';
+                confidenceBar.className = 'h-3 rounded-full transition-all duration-500 bg-yellow-500';
+                recommendationBox.className = 'border-l-4 border-yellow-500 bg-yellow-50 p-4 rounded mb-4';
+            } else {
+                resultCard.className = 'rounded-lg p-6 bg-green-50 border-2 border-green-200';
+                resultIcon.innerHTML = '<i class="fas fa-check-circle text-green-600"></i>';
+                resultTitle.className = 'text-2xl font-bold mb-1 text-green-700';
+                resultMessage.className = 'text-sm text-green-600';
+                confidenceBadge.className = 'px-4 py-2 rounded-full font-bold text-sm bg-green-200 text-green-800';
+                confidenceBar.className = 'h-3 rounded-full transition-all duration-500 bg-green-500';
+                recommendationBox.className = 'border-l-4 border-green-500 bg-green-50 p-4 rounded mb-4';
+            }
+
+            resultTitle.textContent = data.prediction;
+            resultMessage.textContent = data.message;
+            confidenceBadge.textContent = `${data.confidence}% Confidence`;
+            confidencePercent.textContent = `${data.confidence}%`;
+            confidenceBar.style.width = `${data.confidence}%`;
+            recommendation.textContent = data.recommendation;
+
+            // Display indicators
+            if (data.indicators && data.indicators.length > 0) {
+                indicatorsBox.classList.remove('hidden');
+                indicatorsList.innerHTML = data.indicators.map(indicator => 
+                    `<span class="px-3 py-1 bg-white rounded-full text-xs font-medium border border-gray-300">
+                        ${indicator}
+                    </span>`
+                ).join('');
+            } else {
+                indicatorsBox.classList.add('hidden');
+            }
+
+            resultContainer.classList.remove('hidden');
+            resultContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        async function provideFeedback(feedback) {
+            if (!currentLogId) return;
+
+            try {
+                await fetch(`${API_BASE}/feedback/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        log_id: currentLogId,
+                        feedback: feedback
+                    })
+                });
+
+                alert(`Thank you for your feedback!`);
+            } catch (error) {
+                console.error('Error submitting feedback:', error);
+            }
+        }
+
+        async function loadHistory() {
+            try {
+                const response = await fetch(`${API_BASE}/detection-history/?user_id=${userId}`);
+                const data = await response.json();
+                
+                const historyList = document.getElementById('historyList');
+                
+                if (data.history && data.history.length > 0) {
+                    historyList.innerHTML = data.history.map(item => `
+                        <div class="bg-white rounded-lg p-4 shadow">
+                            <div class="flex justify-between items-start">
+                                <div class="flex-1">
+                                    <p class="text-sm text-gray-600 mb-1">
+                                        ${new Date(item.created_at).toLocaleString()}
+                                    </p>
+                                    <p class="font-medium text-gray-800 mb-2">
+                                        ${item.message_preview}
+                                    </p>
+                                    <div class="flex space-x-2">
+                                        <span class="px-2 py-1 rounded text-xs font-medium 
+                                            ${item.classification === 'phishing' ? 'bg-red-100 text-red-700' : 
+                                              item.classification === 'suspicious' ? 'bg-yellow-100 text-yellow-700' : 
+                                              'bg-green-100 text-green-700'}">
+                                            ${item.classification.toUpperCase()}
+                                        </span>
+                                        <span class="px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-700">
+                                            ${item.confidence}% confident
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    historyList.innerHTML = '<p class="text-center text-gray-500">No history yet. Check some messages first!</p>';
+                }
+            } catch (error) {
+                console.error('Error loading history:', error);
+            }
+        }
+
+        async function updateStatistics() {
+            try {
+                const response = await fetch(`${API_BASE}/statistics/`);
+                const data = await response.json();
+                
+                if (data.summary) {
+                    document.getElementById('totalChecks').textContent = data.summary.total_checks;
+                    document.getElementById('phishingBlocked').textContent = data.summary.phishing_detected;
+                    document.getElementById('statTotalChecks').textContent = data.summary.total_checks;
+                    document.getElementById('statPhishing').textContent = data.summary.phishing_detected;
+                    document.getElementById('statSuspicious').textContent = data.summary.suspicious_detected;
+                    document.getElementById('statSafe').textContent = data.summary.safe_detected;
+                }
+            } catch (error) {
+                console.error('Error loading statistics:', error);
+            }
+        }
+
+        async function saveSettings() {
+            const settings = {
+                user_id: userId,
+                language: document.getElementById('settingsLanguage').value,
+                theme: document.getElementById('settingsTheme').value,
+                sound_alerts: document.getElementById('soundAlerts').checked,
+                auto_save_history: document.getElementById('autoSaveHistory').checked
+            };
+
+            try {
+                await fetch(`${API_BASE}/user-preferences/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(settings)
+                });
+
+                alert('Settings saved successfully!');
+            } catch (error) {
+                console.error('Error saving settings:', error);
+                alert('Error saving settings');
+            }
+        }
+
+        // Load initial data
+        updateStatistics();
+        loadHistory();
+    </script>
+</body>
+</html>

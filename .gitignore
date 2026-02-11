@@ -1,0 +1,49 @@
+# ===== Python / Django =====
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+*.log
+
+# ===== Virtual Environment =====
+venv/
+env/
+ENV/
+.venv/
+
+# ===== Django Settings =====
+*.env
+.env
+local_settings.py
+
+# ===== Static & Media Files =====
+staticfiles/
+media/
+
+# ===== Migrations (optional) =====
+# Uncomment if you don't want to push migrations
+# */migrations/
+# !*/migrations/__init__.py
+
+# ===== OS Files =====
+.DS_Store
+Thumbs.db
+
+# ===== VS Code / IDE =====
+.vscode/
+.idea/
+*.swp
+
+# ===== ML / Data Files =====
+*.pkl
+*.joblib
+*.h5
+*.csv
+*.zip
+
+# ===== Node / React (if frontend exists) =====
+node_modules/
+dist/
+build/
