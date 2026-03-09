@@ -150,30 +150,24 @@ def extract_fraud_features_single(text: str) -> list:
     if not isinstance(text, str):
         text = ""
     t = text.lower()
-    urgency_words = ['urgent','immediately','now','today','expires','suspended','blocked','deactivated','act now','limited time','verify now','click here']
-    prize_words   = ['congratulations','winner','won','prize','grant','lottery','selected','compensation','reward','million','n200','n500','n1000','n5000']
-    banking_words = ['bvn','otp','pin','atm','cvv','account number','bank details','nin','verify','confirm','password','login','credential']
-    impersonated  = ['gtb','zenith','access bank','first bank','uba','jamb','waec','nnpc','efcc','mtn','airtel']
+    urgency  = ['urgent','immediately','expires','suspended','blocked','verify now','act now','limited time']
+    prize    = ['congratulations','winner','won','prize','lottery','selected','million','compensation']
+    banking  = ['bvn','otp','pin','atm','cvv','account number','nin','password','credential','login']
+    imperson = ['gtb','zenith','access bank','first bank','uba','jamb','waec','nnpc','efcc','mtn','airtel']
 
-    urgency_score       = sum(1 for w in urgency_words if w in t)
-    prize_score         = sum(1 for w in prize_words   if w in t)
-    banking_score       = sum(1 for w in banking_words if w in t)
-    impersonation_score = sum(1 for w in impersonated  if w in t)
-
-    has_url               = 1 if re.search(r'https?://|www\.|bit\.ly|short\.url', t) else 0
-    has_suspicious_domain = 1 if re.search(r'\b\w+\.(net|xyz|info|cc|tk|ml|ga)\b', t) else 0
-    has_phone             = 1 if re.search(r'\b0[789][01]\d{8}\b', text) else 0
-    phone_plus_urgency    = has_phone * urgency_score
-
-    letters    = [c for c in text if c.isalpha()]
+    letters    = [c for c in t if c.isalpha()]
     caps_ratio = sum(1 for c in letters if c.isupper()) / len(letters) if letters else 0
 
-    exclamation_count  = min(text.count('!'), 5)
-    total_fraud_signal = urgency_score + prize_score + banking_score + has_suspicious_domain * 2 + impersonation_score
-
-    return [urgency_score, prize_score, banking_score, has_url, has_suspicious_domain,
-            has_phone, phone_plus_urgency, round(caps_ratio, 3), exclamation_count,
-            impersonation_score, total_fraud_signal]
+    return [
+        sum(1 for w in urgency  if w in t),
+        sum(1 for w in prize    if w in t),
+        sum(1 for w in banking  if w in t),
+        sum(1 for w in imperson if w in t),
+        1 if re.search(r'https?://|www\.|bit\.ly', t) else 0,
+        1 if re.search(r'\b\w+\.(xyz|info|cc|tk|ml|ga)\b', t) else 0,
+        round(caps_ratio, 3),
+        min(t.count('!'), 5),
+    ]
 
 
 def analyze_indicators(message: str):
@@ -265,13 +259,17 @@ def check_message(request):
                 manual_feats = extract_fraud_features_single(message)
                 full_vec     = sp.hstack([text_vec, sp.csr_matrix([manual_feats])])
                 if hasattr(model, 'predict_proba'):
-                    probs      = model.predict_proba(full_vec)[0]
-                    spam_prob  = float(probs[1] * 100)
-                    legit_prob = float(probs[0] * 100)
+                    probs   = model.predict_proba(full_vec)[0]
+                    ml_spam = float(probs[1] * 100)
                 else:
-                    pred       = model.predict(full_vec)[0]
-                    spam_prob  = 85.0 if pred == 1 else 15.0
-                    legit_prob = 100.0 - spam_prob
+                    pred    = model.predict(full_vec)[0]
+                    ml_spam = 85.0 if pred == 1 else 15.0
+
+                # Blend ML + rule-based for better Nigerian scam detection
+                rule_spam, _ = _rule_based_probs(risk_score)
+                spam_prob  = (ml_spam * 0.5) + (rule_spam * 0.5)
+                legit_prob = 100.0 - spam_prob
+
             except Exception as e:
                 print(f"ML prediction error: {e}")
                 mode = 'rule_based'
@@ -300,17 +298,17 @@ def check_message(request):
             print(f"DB save error (non-fatal): {e}")
 
         return JsonResponse({
-            'prediction':       pred_text,
-            'classification':   classification,
-            'spam_probability': round(spam_prob, 2),
+            'prediction':        pred_text,
+            'classification':    classification,
+            'spam_probability':  round(spam_prob, 2),
             'legit_probability': round(legit_prob, 2),
-            'confidence':       confidence,
-            'message':          msg_text,
-            'recommendation':   recommendation,
-            'indicators':       indicators,
-            'risk_score':       risk_score,
-            'model_loaded':     MODEL_LOADED,
-            'detection_id':     det_id,
+            'confidence':        confidence,
+            'message':           msg_text,
+            'recommendation':    recommendation,
+            'indicators':        indicators,
+            'risk_score':        risk_score,
+            'model_loaded':      MODEL_LOADED,
+            'detection_id':      det_id,
         })
 
     except json.JSONDecodeError:
@@ -447,16 +445,15 @@ def admin_stats(request):
         total = DetectionLog.objects.count()
         spam  = DetectionLog.objects.filter(label='spam').count()
 
-        # Load model accuracy from comparison file if available
-        model_accuracy = None
-        model_version  = "Random Forest v1"
+        model_accuracy  = 93.28
+        model_version   = "SVM (LinearSVC)"
         comparison_path = os.path.join(CURRENT_DIR, 'ml', 'model_comparison.json')
         try:
             with open(comparison_path) as f:
                 comparison = json.load(f)
-            best = max(comparison, key=lambda x: x.get('accuracy', 0))
+            best = max(comparison.values(), key=lambda x: x.get('accuracy', 0))
             model_accuracy = round(best.get('accuracy', 0) * 100, 1)
-            model_version  = best.get('model', 'Random Forest v1')
+            model_version  = best.get('name', 'SVM (LinearSVC)')
         except Exception:
             pass
 
@@ -557,9 +554,9 @@ def health_check(request):
 @require_http_methods(["GET"])
 def api_home(request):
     return JsonResponse({
-        'message':      'FRAUDLOCK NG API',
-        'version':      '2.1',
-        'model_loaded': MODEL_LOADED,
+        'message':        'FRAUDLOCK NG API',
+        'version':        '2.1',
+        'model_loaded':   MODEL_LOADED,
         'spam_threshold': SPAM_THRESHOLD,
         'endpoints': {
             'check_message': 'POST /api/check-message/',
@@ -638,6 +635,7 @@ def number_directory(request):
         } for r in qs], safe=False)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
 
 def predict_sms(request):
     return check_message(request)
