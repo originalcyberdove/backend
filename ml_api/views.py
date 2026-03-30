@@ -438,7 +438,7 @@ def generate_audio(request):
                 'temperature': 0.1,
                 'repetition_penalty': 1.1
             },
-            timeout=60
+            timeout=95
         )
 
         if amebogpt_response.status_code != 200:
@@ -452,7 +452,7 @@ def generate_audio(request):
         base_url = "https://api.amebogpt.com.ng"
         audio_url = base_url + audio_path
 
-        audio_response = http_requests.get(audio_url, timeout=60, stream=True)
+        audio_response = http_requests.get(audio_url, timeout=95, stream=True)
         if audio_response.status_code != 200:
             return JsonResponse({'error': 'Failed to download audio from AmeboGPT'}, status=502)
 
