@@ -41,19 +41,30 @@ except Exception:
     SPAM_THRESHOLD = 0.50
     print(f"⚠  threshold.txt not found, using default: {SPAM_THRESHOLD}")
 
+<<<<<<< HEAD
 # ── AmeboGPT / Termii config ───────────────────────────────────────────────────
 
 AMEBOGPT_API_KEY = os.environ.get('AMEBOGPT_API_KEY', '')
 AMEBOGPT_URL     = 'https://api.amebogpt.com.ng/tts'
 TERMII_API_KEY  = os.environ.get('TERMII_API_KEY', '')
 TERMII_BASE     = 'https://v3.api.termii.com'
+=======
+# ── AmeboGPT / Termii config ─────────────────────────────────────────────────
 
+AMEBO_API_KEY  = os.environ.get('AMEBO_API_KEY', '')
+AMEBO_TTS_URL  = 'https://api.amebogpt.com.ng/tts'
+AMEBO_BASE_URL = 'https://api.amebogpt.com.ng'
+TERMII_API_KEY = os.environ.get('TERMII_API_KEY', '')
+TERMII_BASE    = 'https://v3.api.termii.com'
+>>>>>>> 455115c (fix gpt)
+
+# AmeboGPT voice + language mapping per Nigerian language
 LANG_VOICE_MAP = {
-    'en':  'Idera',
-    'pid': 'Tayo',
-    'yo':  'Wura',
-    'ha':  'Umar',
-    'ig':  'Chinenye',
+    'en':  ('idera',   'english'),   # Smooth Yoruba-English female
+    'pid': ('tayo',    'english'),   # Articulate Lagos male
+    'yo':  ('bola',    'yoruba'),    # Warm Yoruba female
+    'ha':  ('danlami', 'hausa'),     # Strong Hausa male
+    'ig':  ('adanna',  'igbo'),      # Clear Igbo female
 }
 
 FULL_LANGUAGE_MAP = {
@@ -403,7 +414,11 @@ def submit_feedback(request):
         return JsonResponse({'error': f'Server error: {str(e)}'}, status=500)
 
 
+<<<<<<< HEAD
 # ── Audio endpoint (AmeboGPT) ─────────────────────────────────────────────────
+=======
+# ── Audio endpoint (AmeboGPT) ────────────────────────────────────────────────
+>>>>>>> 455115c (fix gpt)
 
 @csrf_exempt
 @require_http_methods(["POST"])
@@ -418,6 +433,7 @@ def generate_audio(request):
         label_for_verdict = 'phishing' if label == 'spam' else 'safe'
         _, _, recommendation = _verdict(label_for_verdict, language)
 
+<<<<<<< HEAD
         if not AMEBOGPT_API_KEY:
             return JsonResponse({'error': 'AMEBOGPT_API_KEY not configured'}, status=503)
 
@@ -458,6 +474,46 @@ def generate_audio(request):
 
         audio_bytes = b''.join(audio_response.iter_content(chunk_size=8192))
         return HttpResponse(audio_bytes, content_type='audio/wav', status=200)
+=======
+        if not AMEBO_API_KEY:
+            return JsonResponse({'error': 'AMEBO_API_KEY not configured'}, status=503)
+
+        tts_text = build_tts_text(label, round(float(confidence)), risk_level, recommendation, language)
+        speaker, lang_code = LANG_VOICE_MAP.get(language, ('idera', 'english'))
+
+        # Step 1: Request TTS from AmeboGPT
+        amebo_response = http_requests.post(
+            AMEBO_TTS_URL,
+            headers={'X-API-Key': AMEBO_API_KEY, 'Content-Type': 'application/json'},
+            json={
+                'text':               tts_text,
+                'language':           lang_code,
+                'speaker_name':       speaker,
+                'temperature':        0.1,
+                'repetition_penalty': 1.1,
+            },
+            timeout=(10, 60),
+        )
+
+        if amebo_response.status_code != 200:
+            return JsonResponse({'error': f'AmeboGPT error: {amebo_response.status_code}'}, status=502)
+
+        amebo_data = amebo_response.json()
+        audio_path = amebo_data.get('audio_url')
+
+        if not audio_path:
+            return JsonResponse({'error': 'No audio URL returned from AmeboGPT'}, status=502)
+
+        # Step 2: Fetch the actual audio file
+        audio_url = f'{AMEBO_BASE_URL}{audio_path}'
+        audio_resp = http_requests.get(audio_url, timeout=(10, 30))
+
+        if audio_resp.status_code != 200:
+            return JsonResponse({'error': 'Failed to fetch audio file'}, status=502)
+
+        content_type = audio_resp.headers.get('Content-Type', 'audio/wav')
+        return HttpResponse(audio_resp.content, content_type=content_type, status=200)
+>>>>>>> 455115c (fix gpt)
 
     except http_requests.Timeout:
         return JsonResponse({'error': 'AmeboGPT request timed out'}, status=504)
@@ -577,7 +633,11 @@ def health_check(request):
         'model_loaded': MODEL_LOADED,
         'threshold':    SPAM_THRESHOLD,
         'timestamp':    str(timezone.now()),
+<<<<<<< HEAD
         'audio':        'AmeboGPT' if AMEBOGPT_API_KEY else 'browser-fallback',
+=======
+        'audio':        'AmeboGPT' if AMEBO_API_KEY else 'browser-fallback',
+>>>>>>> 455115c (fix gpt)
     })
 
 
@@ -669,3 +729,75 @@ def number_directory(request):
 
 def predict_sms(request):
     return check_message(request)
+
+
+# ── Admin flag / unflag endpoints ─────────────────────────────────────────────
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def admin_flag_number(request):
+    try:
+        data   = json.loads(request.body)
+        number = re.sub(r'\s+', '', data.get('number', '').strip())
+        reason = data.get('reason', '')
+
+        if not number:
+            return JsonResponse({'error': 'No number provided'}, status=400)
+
+        reported, created = ReportedNumber.objects.get_or_create(
+            number=number,
+            defaults={
+                'language':        'en',
+                'predicted_label': 'spam',
+                'sample_message':  reason[:500] if reason else 'Manually flagged by admin',
+            },
+        )
+
+        if not created and reason:
+            reported.sample_message = reason[:500]
+
+        reported.auto_flagged = True
+        reported.flagged_at   = timezone.now()
+        reported.save()
+
+        return JsonResponse({
+            'success':      True,
+            'number':       number,
+            'auto_flagged': True,
+            'message':      f"Number {number} flagged by admin.",
+        })
+
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def admin_unflag_number(request):
+    try:
+        data   = json.loads(request.body)
+        number = re.sub(r'\s+', '', data.get('number', '').strip())
+
+        if not number:
+            return JsonResponse({'error': 'No number provided'}, status=400)
+
+        try:
+            reported = ReportedNumber.objects.get(number=number)
+            reported.auto_flagged = False
+            reported.flagged_at   = None
+            reported.save()
+            return JsonResponse({
+                'success':      True,
+                'number':       number,
+                'auto_flagged': False,
+                'message':      f"Number {number} unflagged.",
+            })
+        except ReportedNumber.DoesNotExist:
+            return JsonResponse({'error': 'Number not found'}, status=404)
+
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

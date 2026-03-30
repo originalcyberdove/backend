@@ -1,0 +1,47 @@
+SMS Phishing Detection — Training Report
+Generated  : 2026-03-12 16:33:42
+Dataset    : nigerian_sms.csv  (4981 samples)
+Train/Test : 3984 / 997
+============================================================
+
+[SVM — LinearSVC]
+Accuracy  : 0.9348
+AUC-ROC   : 0.9728
+CV F1     : 0.9112 ± 0.0093
+
+              precision    recall  f1-score   support
+
+  Legitimate       0.95      0.93      0.94       561
+        Spam       0.91      0.94      0.93       436
+
+    accuracy                           0.93       997
+   macro avg       0.93      0.94      0.93       997
+weighted avg       0.94      0.93      0.93       997
+
+Confusion Matrix:
+[[523  38]
+ [ 27 409]]
+
+============================================================
+
+[Random Forest]
+Accuracy  : 0.9157
+AUC-ROC   : 0.9678
+CV F1     : 0.8983 ± 0.0126
+
+              precision    recall  f1-score   support
+
+  Legitimate       0.92      0.93      0.93       561
+        Spam       0.91      0.90      0.90       436
+
+    accuracy                           0.92       997
+   macro avg       0.91      0.91      0.91       997
+weighted avg       0.92      0.92      0.92       997
+
+Confusion Matrix:
+[[521  40]
+ [ 44 392]]
+
+============================================================
+Winner by AUC-ROC : SVM
+Active model      : sms_phishing_model.pkl

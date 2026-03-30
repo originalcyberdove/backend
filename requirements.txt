@@ -11,3 +11,5 @@ pandas
 numpy
 scipy
 requests
+psycopg2-binary
+dj-database-url
