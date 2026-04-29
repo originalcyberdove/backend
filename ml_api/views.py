@@ -39,21 +39,21 @@ try:
     print(f"✅ Loaded calibrated threshold: {SPAM_THRESHOLD}")
 except Exception:
     SPAM_THRESHOLD = 0.50
-    print(f"⚠  threshold.txt not found, using default: {SPAM_THRESHOLD}")
+    print(f"  threshold.txt not found, using default: {SPAM_THRESHOLD}")
 
-<<<<<<< HEAD
+
 # ── yarnGPT / Termii config ───────────────────────────────────────────────────
 
 YARNGPT_API_KEY = os.environ.get('YARNGPT_API_KEY', '')
 YARNGPT_URL     = 'https://yarngpt.ai/api/v1/tts'
 TERMII_API_KEY  = os.environ.get('TERMII_API_KEY', '')
 TERMII_BASE     = 'https://v3.api.termii.com'
-=======
+
 # ── YARNGPT / Termii config ─────────────────────────────────────────────────
 
-YARN_API_KEY  = os.environ.get('AMEBO_API_KEY', '')
+YARN_API_KEY  = os.environ.get('YARNGPT_API_KEY', '')
 YARN_TTS_URL  = 'https://yarngpt.ai/api/v1/tts'
-YARN_BASE_URL = 'https://yarngpt.ai'
+YARN_BASE_URL = 'https://yarngpt.ai/api-docs'
 TERMII_API_KEY = os.environ.get('TERMII_API_KEY', '')
 TERMII_BASE    = 'https://v3.api.termii.com'
 
@@ -425,18 +425,18 @@ def generate_audio(request):
         label_for_verdict = 'phishing' if label == 'spam' else 'safe'
         _, _, recommendation = _verdict(label_for_verdict, language)
 
-<<<<<<< HEAD
-        if not AMEBOGPT_API_KEY:
-            return JsonResponse({'error': 'AMEBOGPT_API_KEY not configured'}, status=503)
+
+        if not YARNGPT_API_KEY:
+            return JsonResponse({'error': 'YARNGPT_API_KEY not configured'}, status=503)
 
         tts_text = build_tts_text(label, round(float(confidence)), risk_level, recommendation, language)
         voice    = LANG_VOICE_MAP.get(language, 'Idera')
         full_lang = FULL_LANGUAGE_MAP.get(language, 'english')
 
-        amebogpt_response = http_requests.post(
-            AMEBOGPT_URL,
+        YARNGPT_response = http_requests.post(
+            YARNGPT_URL,
             headers={
-                'X-API-Key': AMEBOGPT_API_KEY,
+                'X-API-Key': YARNGPT_API_KEY,
                 'Content-Type': 'application/json'
             },
             json={
@@ -449,34 +449,34 @@ def generate_audio(request):
             timeout=95
         )
 
-        if amebogpt_response.status_code != 200:
-            return JsonResponse({'error': f'AmeboGPT error: {amebogpt_response.status_code}'}, status=502)
+        if YARNGPT_response.status_code != 200:
+            return JsonResponse({'error': f'YARNGPT error: {YARNGPT_response.status_code}'}, status=502)
 
-        resp_data = amebogpt_response.json()
+        resp_data = YARNGPT_response.json()
         audio_path = resp_data.get('audio_url')
         if not audio_path:
-            return JsonResponse({'error': 'AmeboGPT returned no audio URL'}, status=502)
+            return JsonResponse({'error': 'YARNGPT returned no audio URL'}, status=502)
 
-        base_url = "https://api.amebogpt.com.ng"
+        base_url = "https://yarngpt.ai/api-docs"
         audio_url = base_url + audio_path
 
         audio_response = http_requests.get(audio_url, timeout=95, stream=True)
         if audio_response.status_code != 200:
-            return JsonResponse({'error': 'Failed to download audio from AmeboGPT'}, status=502)
+            return JsonResponse({'error': 'Failed to download audio from YARNGPT'}, status=502)
 
         audio_bytes = b''.join(audio_response.iter_content(chunk_size=8192))
         return HttpResponse(audio_bytes, content_type='audio/wav', status=200)
-=======
-        if not AMEBO_API_KEY:
-            return JsonResponse({'error': 'AMEBO_API_KEY not configured'}, status=503)
+
+        if not YARN_API_KEY:
+            return JsonResponse({'error': 'YARN_API_KEY not configured'}, status=503)
 
         tts_text = build_tts_text(label, round(float(confidence)), risk_level, recommendation, language)
         speaker, lang_code = LANG_VOICE_MAP.get(language, ('idera', 'english'))
 
-        # Step 1: Request TTS from AmeboGPT
-        amebo_response = http_requests.post(
-            AMEBO_TTS_URL,
-            headers={'X-API-Key': AMEBO_API_KEY, 'Content-Type': 'application/json'},
+        # Step 1: Request TTS from YARNGPT
+        YARNGPT_response = http_requests.post(
+            YARNGPT_TTS_URL,
+            headers={'X-API-Key': YARNGPT_API_KEY, 'Content-Type': 'application/json'},
             json={
                 'text':               tts_text,
                 'language':           lang_code,
@@ -487,17 +487,17 @@ def generate_audio(request):
             timeout=(10, 60),
         )
 
-        if amebo_response.status_code != 200:
-            return JsonResponse({'error': f'AmeboGPT error: {amebo_response.status_code}'}, status=502)
+        if YARNGPT_response.status_code != 200:
+            return JsonResponse({'error': f'YARNGPT error: {YARNGPT_response.status_code}'}, status=502)
 
-        amebo_data = amebo_response.json()
-        audio_path = amebo_data.get('audio_url')
+        YARNGPT_data = YARNGPT_response.json()
+        audio_path = YARNGPT_data.get('audio_url')
 
         if not audio_path:
-            return JsonResponse({'error': 'No audio URL returned from AmeboGPT'}, status=502)
+            return JsonResponse({'error': 'No audio URL returned from YARNGPT'}, status=502)
 
         # Step 2: Fetch the actual audio file
-        audio_url = f'{AMEBO_BASE_URL}{audio_path}'
+        audio_url = f'{YARNGPT_BASE_URL}{audio_path}'
         audio_resp = http_requests.get(audio_url, timeout=(10, 30))
 
         if audio_resp.status_code != 200:
@@ -505,10 +505,9 @@ def generate_audio(request):
 
         content_type = audio_resp.headers.get('Content-Type', 'audio/wav')
         return HttpResponse(audio_resp.content, content_type=content_type, status=200)
->>>>>>> 455115c (fix gpt)
 
     except http_requests.Timeout:
-        return JsonResponse({'error': 'AmeboGPT request timed out'}, status=504)
+        return JsonResponse({'error': 'YARNGPT request timed out'}, status=504)
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON'}, status=400)
     except Exception as e:
@@ -616,8 +615,7 @@ def admin_export(request):
         return JsonResponse({'error': str(e)}, status=500)
 
 
-# ── Utility endpoints ─────────────────────────────────────────────────────────
-
+# ── Utility endpoints ─────────────────────
 @require_http_methods(["GET"])
 def health_check(request):
     return JsonResponse({
@@ -625,10 +623,10 @@ def health_check(request):
         'model_loaded': MODEL_LOADED,
         'threshold':    SPAM_THRESHOLD,
         'timestamp':    str(timezone.now()),
-<<<<<<< HEAD
-        'audio':        'YARNGPT' if YARN_API_KEY else 'browser-fallback',
-=======
-        'audio':        'YARNGPT' if YARN_API_KEY else 'browser-fallback',
+
+        'audio':        'YARNGPT' if YARNGPT_API_KEY else 'browser-fallback',
+
+        'audio':        'YARNGPT' if YARNGPT_API_KEY else 'browser-fallback',
     })
 
 

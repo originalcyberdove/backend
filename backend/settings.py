@@ -117,15 +117,14 @@ USE_TZ        = True
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-<<<<<<< HEAD
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # ── External API keys ─────────────────────────────────────────────────────────
 
-YARNGPT_API_KEY = os.environ.get('AMEBOGPT_API_KEY', '') # Left as YARNGPT for backwards compat if needed, print changed
+YARNGPT_API_KEY = os.environ.get('YARNGPT_API_KEY', '') # Left as YARNGPT for backwards compat if needed, print changed
 TERMII_API_KEY  = os.environ.get('TERMII_API_KEY',  '')
 
-print("AMEBOGPT KEY LOADED:", bool(YARNGPT_API_KEY))
-=======
+print("YARNGPT KEY LOADED:", bool(YARNGPT_API_KEY))
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
->>>>>>> 455115c (fix gpt)
