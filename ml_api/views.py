@@ -42,23 +42,22 @@ except Exception:
     print(f"⚠  threshold.txt not found, using default: {SPAM_THRESHOLD}")
 
 <<<<<<< HEAD
-# ── AmeboGPT / Termii config ───────────────────────────────────────────────────
+# ── yarnGPT / Termii config ───────────────────────────────────────────────────
 
-AMEBOGPT_API_KEY = os.environ.get('AMEBOGPT_API_KEY', '')
-AMEBOGPT_URL     = 'https://api.amebogpt.com.ng/tts'
+YARNGPT_API_KEY = os.environ.get('YARNGPT_API_KEY', '')
+YARNGPT_URL     = 'https://yarngpt.ai/api/v1/tts'
 TERMII_API_KEY  = os.environ.get('TERMII_API_KEY', '')
 TERMII_BASE     = 'https://v3.api.termii.com'
 =======
-# ── AmeboGPT / Termii config ─────────────────────────────────────────────────
+# ── YARNGPT / Termii config ─────────────────────────────────────────────────
 
-AMEBO_API_KEY  = os.environ.get('AMEBO_API_KEY', '')
-AMEBO_TTS_URL  = 'https://api.amebogpt.com.ng/tts'
-AMEBO_BASE_URL = 'https://api.amebogpt.com.ng'
+YARN_API_KEY  = os.environ.get('AMEBO_API_KEY', '')
+YARN_TTS_URL  = 'https://yarngpt.ai/api/v1/tts'
+YARN_BASE_URL = 'https://yarngpt.ai'
 TERMII_API_KEY = os.environ.get('TERMII_API_KEY', '')
 TERMII_BASE    = 'https://v3.api.termii.com'
->>>>>>> 455115c (fix gpt)
 
-# AmeboGPT voice + language mapping per Nigerian language
+# YARNGPT voice + language mapping per Nigerian language
 LANG_VOICE_MAP = {
     'en':  ('idera',   'english'),   # Smooth Yoruba-English female
     'pid': ('tayo',    'english'),   # Articulate Lagos male
@@ -413,13 +412,6 @@ def submit_feedback(request):
     except Exception as e:
         return JsonResponse({'error': f'Server error: {str(e)}'}, status=500)
 
-
-<<<<<<< HEAD
-# ── Audio endpoint (AmeboGPT) ─────────────────────────────────────────────────
-=======
-# ── Audio endpoint (AmeboGPT) ────────────────────────────────────────────────
->>>>>>> 455115c (fix gpt)
-
 @csrf_exempt
 @require_http_methods(["POST"])
 def generate_audio(request):
@@ -634,10 +626,9 @@ def health_check(request):
         'threshold':    SPAM_THRESHOLD,
         'timestamp':    str(timezone.now()),
 <<<<<<< HEAD
-        'audio':        'AmeboGPT' if AMEBOGPT_API_KEY else 'browser-fallback',
+        'audio':        'YARNGPT' if YARN_API_KEY else 'browser-fallback',
 =======
-        'audio':        'AmeboGPT' if AMEBO_API_KEY else 'browser-fallback',
->>>>>>> 455115c (fix gpt)
+        'audio':        'YARNGPT' if YARN_API_KEY else 'browser-fallback',
     })
 
 
