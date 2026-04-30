@@ -39,39 +39,23 @@ try:
     print(f"✅ Loaded calibrated threshold: {SPAM_THRESHOLD}")
 except Exception:
     SPAM_THRESHOLD = 0.50
-    print(f"  threshold.txt not found, using default: {SPAM_THRESHOLD}")
+    print(f"⚠  threshold.txt not found, using default: {SPAM_THRESHOLD}")
 
-
-# ── yarnGPT / Termii config ───────────────────────────────────────────────────
+# ── YarnGPT / Termii config ───────────────────────────────────────────────────
 
 YARNGPT_API_KEY = os.environ.get('YARNGPT_API_KEY', '')
 YARNGPT_URL     = 'https://yarngpt.ai/api/v1/tts'
 TERMII_API_KEY  = os.environ.get('TERMII_API_KEY', '')
 TERMII_BASE     = 'https://v3.api.termii.com'
 
-# ── YARNGPT / Termii config ─────────────────────────────────────────────────
+print(f"YARNGPT KEY LOADED: {bool(YARNGPT_API_KEY)}")
 
-YARN_API_KEY  = os.environ.get('YARNGPT_API_KEY', '')
-YARN_TTS_URL  = 'https://yarngpt.ai/api/v1/tts'
-YARN_BASE_URL = 'https://yarngpt.ai/api-docs'
-TERMII_API_KEY = os.environ.get('TERMII_API_KEY', '')
-TERMII_BASE    = 'https://v3.api.termii.com'
-
-# YARNGPT voice + language mapping per Nigerian language
 LANG_VOICE_MAP = {
-    'en':  ('idera',   'english'),   # Smooth Yoruba-English female
-    'pid': ('tayo',    'english'),   # Articulate Lagos male
-    'yo':  ('bola',    'yoruba'),    # Warm Yoruba female
-    'ha':  ('danlami', 'hausa'),     # Strong Hausa male
-    'ig':  ('adanna',  'igbo'),      # Clear Igbo female
-}
-
-FULL_LANGUAGE_MAP = {
-    'en':  'english',
-    'pid': 'pidgin',
-    'yo':  'yoruba',
-    'ha':  'hausa',
-    'ig':  'igbo',
+    'en':  'Idera',
+    'pid': 'Tayo',
+    'yo':  'Wura',
+    'ha':  'Umar',
+    'ig':  'Chinenye',
 }
 
 # ── Termii carrier lookup ─────────────────────────────────────────────────────
@@ -412,6 +396,9 @@ def submit_feedback(request):
     except Exception as e:
         return JsonResponse({'error': f'Server error: {str(e)}'}, status=500)
 
+
+# ── Audio endpoint (YarnGPT) ──────────────────────────────────────────────────
+
 @csrf_exempt
 @require_http_methods(["POST"])
 def generate_audio(request):
@@ -425,89 +412,29 @@ def generate_audio(request):
         label_for_verdict = 'phishing' if label == 'spam' else 'safe'
         _, _, recommendation = _verdict(label_for_verdict, language)
 
-
         if not YARNGPT_API_KEY:
             return JsonResponse({'error': 'YARNGPT_API_KEY not configured'}, status=503)
 
         tts_text = build_tts_text(label, round(float(confidence)), risk_level, recommendation, language)
         voice    = LANG_VOICE_MAP.get(language, 'Idera')
-        full_lang = FULL_LANGUAGE_MAP.get(language, 'english')
 
-        YARNGPT_response = http_requests.post(
+        yarngpt_response = http_requests.post(
             YARNGPT_URL,
-            headers={
-                'X-API-Key': YARNGPT_API_KEY,
-                'Content-Type': 'application/json'
-            },
-            json={
-                'text': tts_text,
-                'language': full_lang,
-                'speaker_name': voice,
-                'temperature': 0.1,
-                'repetition_penalty': 1.1
-            },
-            timeout=95
-        )
-
-        if YARNGPT_response.status_code != 200:
-            return JsonResponse({'error': f'YARNGPT error: {YARNGPT_response.status_code}'}, status=502)
-
-        resp_data = YARNGPT_response.json()
-        audio_path = resp_data.get('audio_url')
-        if not audio_path:
-            return JsonResponse({'error': 'YARNGPT returned no audio URL'}, status=502)
-
-        base_url = "https://yarngpt.ai/api-docs"
-        audio_url = base_url + audio_path
-
-        audio_response = http_requests.get(audio_url, timeout=95, stream=True)
-        if audio_response.status_code != 200:
-            return JsonResponse({'error': 'Failed to download audio from YARNGPT'}, status=502)
-
-        audio_bytes = b''.join(audio_response.iter_content(chunk_size=8192))
-        return HttpResponse(audio_bytes, content_type='audio/wav', status=200)
-
-        if not YARN_API_KEY:
-            return JsonResponse({'error': 'YARN_API_KEY not configured'}, status=503)
-
-        tts_text = build_tts_text(label, round(float(confidence)), risk_level, recommendation, language)
-        speaker, lang_code = LANG_VOICE_MAP.get(language, ('idera', 'english'))
-
-        # Step 1: Request TTS from YARNGPT
-        YARNGPT_response = http_requests.post(
-            YARNGPT_TTS_URL,
-            headers={'X-API-Key': YARNGPT_API_KEY, 'Content-Type': 'application/json'},
-            json={
-                'text':               tts_text,
-                'language':           lang_code,
-                'speaker_name':       speaker,
-                'temperature':        0.1,
-                'repetition_penalty': 1.1,
-            },
+            headers={'Authorization': f'Bearer {YARNGPT_API_KEY}', 'Content-Type': 'application/json'},
+            json={'text': tts_text, 'voice': voice, 'response_format': 'mp3'},
             timeout=(10, 60),
+            stream=True,
         )
 
-        if YARNGPT_response.status_code != 200:
-            return JsonResponse({'error': f'YARNGPT error: {YARNGPT_response.status_code}'}, status=502)
+        if yarngpt_response.status_code != 200:
+            print(f"YarnGPT error: {yarngpt_response.status_code} — {yarngpt_response.text}")
+            return JsonResponse({'error': f'YarnGPT error: {yarngpt_response.status_code}'}, status=502)
 
-        YARNGPT_data = YARNGPT_response.json()
-        audio_path = YARNGPT_data.get('audio_url')
-
-        if not audio_path:
-            return JsonResponse({'error': 'No audio URL returned from YARNGPT'}, status=502)
-
-        # Step 2: Fetch the actual audio file
-        audio_url = f'{YARNGPT_BASE_URL}{audio_path}'
-        audio_resp = http_requests.get(audio_url, timeout=(10, 30))
-
-        if audio_resp.status_code != 200:
-            return JsonResponse({'error': 'Failed to fetch audio file'}, status=502)
-
-        content_type = audio_resp.headers.get('Content-Type', 'audio/wav')
-        return HttpResponse(audio_resp.content, content_type=content_type, status=200)
+        audio_bytes = b''.join(yarngpt_response.iter_content(chunk_size=8192))
+        return HttpResponse(audio_bytes, content_type='audio/mpeg', status=200)
 
     except http_requests.Timeout:
-        return JsonResponse({'error': 'YARNGPT request timed out'}, status=504)
+        return JsonResponse({'error': 'YarnGPT request timed out'}, status=504)
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON'}, status=400)
     except Exception as e:
@@ -522,7 +449,7 @@ def admin_stats(request):
         total = DetectionLog.objects.count()
         spam  = DetectionLog.objects.filter(label='spam').count()
 
-        model_accuracy  = 93.28
+        model_accuracy  = 92.48
         model_version   = "SVM (LinearSVC)"
         comparison_path = os.path.join(CURRENT_DIR, 'ml', 'model_comparison.json')
         try:
@@ -615,7 +542,8 @@ def admin_export(request):
         return JsonResponse({'error': str(e)}, status=500)
 
 
-# ── Utility endpoints ─────────────────────
+# ── Utility endpoints ─────────────────────────────────────────────────────────
+
 @require_http_methods(["GET"])
 def health_check(request):
     return JsonResponse({
@@ -623,10 +551,7 @@ def health_check(request):
         'model_loaded': MODEL_LOADED,
         'threshold':    SPAM_THRESHOLD,
         'timestamp':    str(timezone.now()),
-
-        'audio':        'YARNGPT' if YARNGPT_API_KEY else 'browser-fallback',
-
-        'audio':        'YARNGPT' if YARNGPT_API_KEY else 'browser-fallback',
+        'audio':        'YarnGPT' if YARNGPT_API_KEY else 'browser-fallback',
     })
 
 
